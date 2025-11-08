@@ -20,7 +20,8 @@ app.config["SECRET_KEY"] = os.getenv("APP_SECRET", secrets.token_hex(16))
 app.config["UPLOAD_FOLDER"] = os.path.join(app.static_folder, "uploads")
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
-DB_PATH = "jtgarage.db"
+DB_PATH = "/tmp/jtgarage.db"
+
 
 # ---------- Brand ----------
 BRAND = {
