@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>{{ brand.name }} Admin</title>
 <style>
-/* --- your original styles remain unchanged --- */
 :root {
   --accent: {{ brand.accent }};
   --accent-dark:#154f2c;
@@ -58,9 +57,8 @@ body.dark #modal .box{background:var(--card-dark);}
 .preview img{max-width:100%;height:auto;border-radius:10px;margin-top:8px;border:1px solid var(--border-light);}
 body.dark .preview img{border-color:var(--border-dark);}
 footer{text-align:center;color:#888;font-size:13px;margin-top:40px;padding:20px;}
-.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
-.tabs button{flex:1 1 auto;min-width:140px;}
-.active-tab{box-shadow:inset 0 -3px 0 var(--accent-dark);}
+@media(max-width:800px){header{flex-direction:column;align-items:flex-start;gap:8px}.tools{flex-direction:column}button,.tools input[type=file]{width:100%}}
+@media(max-width:500px){th,td{font-size:12px;padding:8px}header a,header .theme-toggle{font-size:13px}#modal .box{width:95%;padding:16px}td img.thumb{width:32px;height:32px}}
 </style>
 </head>
 
@@ -85,77 +83,28 @@ footer{text-align:center;color:#888;font-size:13px;margin-top:40px;padding:20px;
   </section>
 
   <section id="dash" style="display:none;">
-    <div class="tabs">
-      <button class="tabBtn active-tab" onclick="showTab('products')">Products</button>
-      <button class="tabBtn" onclick="showTab('orders')">Orders</button>
-      <button class="tabBtn" onclick="showTab('stock')">Stock</button>
-      <button class="tabBtn" onclick="showTab('payments')">Payments</button>
-      <button class="tabBtn" onclick="showTab('recon')">Reconciliation</button>
+    <div class="tools">
+      <button onclick="openNew()">＋ New Product</button>
+      <button onclick="exportCSV()">⬇ Export CSV</button>
+      <input type="file" id="csv" accept=".csv" onchange="importCSV(this.files[0])">
+      <button onclick="window.open('/admin/repair-db','_blank')">🧩 Repair DB</button>
     </div>
-
-    <div id="tab-products">
-      <div class="tools">
-        <button onclick="openNew()">＋ New Product</button>
-        <button onclick="window.open('/admin/repair-db','_blank')">🧩 Repair DB</button>
-      </div>
-      <div class="table-container">
-        <table id="tbl">
-          <thead><tr><th>ID</th><th>Product</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div id="tab-orders" style="display:none;">
-      <div class="table-container">
-        <table id="tblOrders">
-          <thead><tr><th>ID</th><th>Phone</th><th>Total</th><th>Paid</th><th>Status</th><th>Items</th><th>Date</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div id="tab-stock" style="display:none;">
-      <div style="margin-bottom:10px;">
-        <input id="stockPID" type="number" placeholder="Product ID">
-        <input id="stockChange" type="number" placeholder="+/- Quantity">
-        <input id="stockReason" placeholder="Reason">
-        <button onclick="adjustStock()">Update Stock</button>
-      </div>
-    </div>
-
-    <div id="tab-payments" style="display:none;">
-      <div style="margin-bottom:10px;">
-        <input id="payOID" type="number" placeholder="Order ID">
-        <input id="payAmount" type="number" placeholder="Amount (KES)">
-        <input id="payRef" placeholder="Reference">
-        <select id="payMethod">
-          <option value="cash">Cash</option>
-          <option value="bank">Bank</option>
-          <option value="mpesa">M-Pesa</option>
-        </select>
-        <button onclick="confirmPayment()">Confirm</button>
-      </div>
-    </div>
-
-    <div id="tab-recon" style="display:none;">
-      <div class="table-container">
-        <table id="tblRecon">
-          <thead><tr><th>Order ID</th><th>Phone</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th>Date</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
+    <div class="table-container">
+      <table id="tbl">
+        <thead><tr><th>ID</th><th>Product</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
+        <tbody></tbody>
+      </table>
     </div>
   </section>
 </div>
 
-<!-- modal + category tree from your original code unchanged -->
 <div id="modal">
   <div class="box">
     <h3 id="mtitle">New Product</h3>
     <input id="pname" placeholder="Product Name">
     <input id="pprice" type="number" placeholder="Price (KES)">
     <input id="pcat" placeholder="Category">
+    <button type="button" onclick="openTree()" style="margin:6px 0;background:#eee;color:#111;width:100%;">📂 Choose from Tree</button>
     <input id="pstock" type="number" placeholder="Stock Quantity">
     <textarea id="pdesc" placeholder="Description" rows="4" style="margin-top:8px;border-radius:8px;padding:10px;width:100%;border:1px solid #ddd;"></textarea>
     <input type="file" id="pimg" accept="image/*" onchange="preview(this)">
@@ -165,14 +114,22 @@ footer{text-align:center;color:#888;font-size:13px;margin-top:40px;padding:20px;
   </div>
 </div>
 
+<!-- CATEGORY TREE -->
+<div id="catTree" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99;align-items:center;justify-content:center;">
+  <div style="background:#fff;color:#000;border-radius:12px;max-width:600px;width:95%;max-height:85vh;overflow-y:auto;padding:20px;">
+    <h3>Choose Category</h3>
+    <ul id="categoryTree" style="list-style:none;padding:0;margin:0;"></ul>
+    <button onclick="closeTree()" style="margin-top:10px;background:#b91c1c;width:100%;">Close</button>
+  </div>
+</div>
+
 <footer>© {{ brand.name }} — Admin Control Panel</footer>
 
 <script>
-/* --- your existing JS kept intact, plus appended below --- */
 const themeSwitch=document.getElementById('themeSwitch');
 if(window.matchMedia('(prefers-color-scheme: dark)').matches){document.body.classList.add('dark');themeSwitch.checked=true;}
-themeSwitch.addEventListener('change',()=>{document.body.classList.toggle('dark',themeSwitch.checked);});
-let products=[],editing=null;
+themeSwitch.addEventListener('change',()=>{document.body.classList.toggle('dark',themeSwitch.checked);localStorage.setItem('jt_theme',themeSwitch.checked?'dark':'light');});
+if(localStorage.getItem('jt_theme')==='dark'){document.body.classList.add('dark');themeSwitch.checked=true;}
 
 function login(){
  const u=document.getElementById('user').value,p=document.getElementById('pass').value;
@@ -180,74 +137,74 @@ function login(){
  .then(r=>r.text()).then(t=>{if(t.includes('Admin'))location.reload();else document.getElementById('msg').textContent='Invalid username or password';});
 }
 
+let products=[],editing=null;
 async function load(){
- const s=await fetch('/admin/status').then(r=>r.json());
- if(!s.logged_in){document.getElementById('login').style.display='block';document.getElementById('dash').style.display='none';return;}
- document.getElementById('login').style.display='none';
- document.getElementById('dash').style.display='block';
- const r=await fetch('/api/products');products=await r.json();
- document.querySelector('#tbl tbody').innerHTML=products.map(p=>`
-   <tr>
-     <td>${p.id}</td>
-     <td><img src="/static/${p.img||'placeholder.jpg'}" class="thumb">${p.name}</td>
-     <td>${p.price_kes}</td><td>${p.stock}</td>
-     <td><button onclick='edit(${p.id})'>Edit</button><button class="delete" onclick='delp(${p.id})'>Delete</button></td>
-   </tr>`).join('');
- loadOrders();loadRecon();
+ try{
+   const s=await fetch('/admin/status').then(r=>r.json());
+   if(!s.logged_in){document.getElementById('login').style.display='block';document.getElementById('dash').style.display='none';return;}
+   document.getElementById('username').textContent=s.username||'admin';
+   document.getElementById('login').style.display='none';document.getElementById('dash').style.display='block';
+   document.getElementById('loginBadge').style.display='inline-block';document.getElementById('logoutBtn').style.display='inline-block';
+   const r=await fetch('/api/products');products=await r.json();
+   document.querySelector('#tbl tbody').innerHTML=Array.isArray(products)?products.map(p=>`
+     <tr>
+       <td>${p.id}</td>
+       <td><img src="/static/${p.img||'placeholder.jpg'}" class="thumb">${p.name}</td>
+       <td>${p.price_kes}</td><td>${p.stock}</td>
+       <td><button onclick='edit(${p.id})'>Edit</button><button class="delete" onclick='delp(${p.id})'>Delete</button></td>
+     </tr>`).join(''):`<tr><td colspan='5'>Error loading</td></tr>`;
+ }catch(e){console.error(e);}
 }
-
-/* ---- TAB SYSTEM ---- */
-function showTab(id){
- document.querySelectorAll('[id^="tab-"]').forEach(e=>e.style.display='none');
- document.getElementById('tab-'+id).style.display='block';
- document.querySelectorAll('.tabBtn').forEach(b=>b.classList.remove('active-tab'));
- event.target.classList.add('active-tab');
-}
-
-/* ---- ORDERS ---- */
-async function loadOrders(){
- const r=await fetch('/api/orders');const d=await r.json();
- document.querySelector('#tblOrders tbody').innerHTML=d.map(o=>`
-   <tr><td>${o.id}</td><td>${o.phone}</td><td>${o.total_kes}</td>
-   <td>${o.paid_kes}</td><td>${o.status}</td><td>${o.items_count}</td><td>${o.created_at}</td></tr>`).join('');
-}
-
-/* ---- STOCK ---- */
-function adjustStock(){
- const pid=stockPID.value,chg=stockChange.value,rsn=stockReason.value||'manual';
- fetch('/admin/stock/move',{method:'POST',headers:{'Content-Type':'application/json'},
- body:JSON.stringify({product_id:pid,change:chg,reason:rsn})})
- .then(r=>r.json()).then(x=>{alert('Stock updated');load();});
-}
-
-/* ---- PAYMENTS ---- */
-function confirmPayment(){
- const oid=payOID.value,amt=payAmount.value,ref=payRef.value,method=payMethod.value;
- fetch('/admin/payments/confirm',{method:'POST',headers:{'Content-Type':'application/json'},
- body:JSON.stringify({order_id:oid,amount:amt,ref:ref,method:method})})
- .then(r=>r.json()).then(x=>{alert('Payment confirmed');loadRecon();});
-}
-
-/* ---- RECONCILIATION ---- */
-async function loadRecon(){
- const r=await fetch('/api/report/reconciliation');const d=await r.json();
- document.querySelector('#tblRecon tbody').innerHTML=d.map(o=>`
-   <tr><td>${o.order_id}</td><td>${o.phone}</td><td>${o.total_kes}</td>
-   <td>${o.paid_kes}</td><td>${o.balance_kes}</td><td>${o.status}</td><td>${o.created_at}</td></tr>`).join('');
-}
-
-/* ---- PRODUCT CRUD same as yours ---- */
-function openNew(){editing=null;resetForm();openModal();}
+function openNew(){editing=null;resetForm();document.getElementById('mtitle').textContent='New Product';openModal();}
 function edit(id){const p=products.find(x=>x.id==id);editing=p;openModal();pname.value=p.name;pprice.value=p.price_kes;pcat.value=p.category;pstock.value=p.stock;pdesc.value=p.description||'';}
 function resetForm(){pname.value='';pprice.value='';pcat.value='';pstock.value='';pdesc.value='';pimg.value='';pview.style.display='none';}
-function openModal(){modal.style.display='flex';}
-function closeModal(){modal.style.display='none';}
+function openModal(){modal.style.display='flex';document.body.style.overflow='hidden';}
+function closeModal(){modal.style.display='none';document.body.style.overflow='';}
 function preview(i){const f=i.files[0];if(!f)return;const u=URL.createObjectURL(f);pview.src=u;pview.style.display='block';}
 function save(){if(!pname.value)return alert("Name required");const fd=new FormData();
-fd.append('name',pname.value);fd.append('price_kes',pprice.value);fd.append('category',pcat.value);fd.append('stock',pstock.value);fd.append('description',pdesc.value);
+fd.append('name',pname.value);fd.append('price_kes',pprice.value);fd.append('category',pcat.value);
+fd.append('stock',pstock.value);fd.append('description',pdesc.value);
 if(pimg.files[0])fd.append('img',pimg.files[0]);
-fetch(editing?`/admin/products/${editing.id}/edit`:'/admin/products/new',{method:'POST',body:fd}).then(()=>{closeModal();load();});}
+fetch(editing?`/admin/products/${editing.id}/edit`:'/admin/products/new',{method:'POST',body:fd}).then(()=>{closeModal();load();});
+}
 function delp(id){if(confirm('Delete this product?'))fetch(`/admin/products/${id}/delete`,{method:'POST'}).then(load);}
+
+/* ---------------- CATEGORY TREE ---------------- */
+const treeData={
+"Engine & Powertrain":["engine block","pistons / rings","camshaft / crankshaft","cylinder head / gasket set","timing belt / timing chain kit","oil pump","fuel injectors","turbocharger","intercooler","radiator","engine mounts"],
+"Transmission / Gearbox":["manual gearbox","automatic gearbox","transfer case","clutch kit","flywheel","prop shaft","universal joints (UJ)","shift linkage","gearbox mounts"],
+"Suspension":["control arms","radius arms","track rod","panhard rod","ball joints","tie rod ends","shocks / struts","springs","air suspension bags","sway bar links"],
+"Braking System":["brake pads","brake discs / rotors","brake calipers","brake booster","ABS module","brake hoses","brake fluid reservoir","handbrake cable"],
+"Steering System":["power steering pump","steering rack","steering box (older Defenders)","drag link","drop arm","steering column","steering knuckle","power steering hoses"],
+"Body Exterior":["fenders","bonnet / hood","doors","hinges","bumpers","grille","door seals / weather strips","roof panels","snorkel kit"],
+"Body Interior":["dashboard","instrument cluster","steering wheel","seats & rails","seat belts","door cards","floor mats","headliner"],
+"Electrical and Electronics":["alternator","starter motor","ECU / control modules","wiring harness","relays + fuse box","sensors (O2, ABS, MAF, MAP etc.)","ignition coils","spark plugs","battery","switches"],
+"HVAC (Cooling & AC)":["AC compressor","condenser","evaporator","heater core","blower motor","thermostat","coolant expansion tank","radiator fan"],
+"Fuel System":["fuel pump","fuel filters","fuel tank","fuel lines","injectors","EGR valve"],
+"Exhaust":["exhaust manifold","catalytic converter","DPF filter","muffler / silencer","exhaust pipes"],
+"Offroad / Aftermarket Upgrades":["lift kits","winch","bull bar","light bar + spot lights","diff lockers","rock sliders","roof racks","snorkels"]
+};
+function openTree(){
+ const list=document.getElementById('categoryTree');
+ list.innerHTML='';
+ for(const [main,subs] of Object.entries(treeData)){
+   const li=document.createElement('li');
+   li.innerHTML=`<b style="cursor:pointer;display:block;margin:8px 0;">${main}</b>
+   <ul style="list-style:none;margin:0 0 8px 12px;padding:0;display:none;"></ul>`;
+   const subList=li.querySelector('ul');
+   subs.forEach(s=>{
+     const sub=document.createElement('li');
+     sub.innerHTML=`<a href="#" style="display:block;padding:4px 0;color:#1C6B3C;">${s}</a>`;
+     sub.onclick=e=>{e.preventDefault();document.getElementById('pcat').value=`${main} > ${s}`;closeTree();};
+     subList.appendChild(sub);
+   });
+   li.querySelector('b').onclick=()=>{subList.style.display=subList.style.display==='none'?'block':'none';};
+   list.appendChild(li);
+ }
+ document.getElementById('catTree').style.display='flex';
+}
+function closeTree(){document.getElementById('catTree').style.display='none';}
+
 load();
 </script>
 </body>
