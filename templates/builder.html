@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+<title>3D Builder — {{ brand.name }}</title>
+<style>
+:root{--accent:{{ brand.accent|default('#1C6B3C') }}}
+*{box-sizing:border-box}
+body{margin:0;background:#0a0a0a;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:14px 18px;background:#111;flex-wrap:wrap;position:sticky;top:0;z-index:10}
+header h2{margin:0;font-size:18px}
+header small{display:block;color:#aaa;font-size:12px}
+header a{color:#fff;text-decoration:none;background:var(--accent);
+  padding:6px 12px;border-radius:8px;font-weight:600}
+header a:hover{background:#155d2c}
+.wrap{max-width:1100px;margin:10px auto;padding:0 14px}
+.canvas-wrap{height:70vh;border-radius:14px;overflow:hidden;position:relative}
+.ctrls{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.ctrls button{
+  background:var(--accent);border:0;border-radius:8px;
+  padding:9px 14px;color:#fff;cursor:pointer;font-weight:600;transition:.2s
+}
+.ctrls button:hover{background:#155d2c}
+.badge{position:absolute;right:10px;top:10px;background:#0008;
+  padding:8px 10px;border-radius:8px;font-size:13px}
+.hotspot{position:absolute;transform:translate(-50%,-50%);
+  background:#0ea5e9;color:#000;padding:4px 8px;border-radius:10px;
+  font-size:12px;font-weight:700;text-decoration:none}
+@media(max-width:700px){
+  .canvas-wrap{height:60vh}
+  .ctrls button{flex:1 1 45%;font-size:14px;padding:10px}
+  header{flex-direction:column;align-items:flex-start}
+}
+@media(max-width:480px){
+  header h2{font-size:16px;width:100%;text-align:center}
+  header small{text-align:center;width:100%}
+  header a{width:100%;text-align:center;margin-top:6px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h2>{{ brand.name }} — 3D Builder</h2>
+    <small>Land Rover Specialists</small>
+  </div>
+  <a href="/">← Back</a>
+</header>
+
+<div class="wrap">
+  <div id="view" class="canvas-wrap">
+    <div class="badge" id="status">Loading model...</div>
+  </div>
+
+  <div class="ctrls">
+    <button onclick="paint('olive')">Olive</button>
+    <button onclick="paint('sand')">Sand</button>
+    <button onclick="paint('black')">Black</button>
+    <button onclick="toggle('RoofRack')">Roof Rack</button>
+    <button onclick="toggle('Snorkel')">Snorkel</button>
+    <button onclick="autoSpin()">⟳ Auto Spin</button>
+  </div>
+  <p style="font-size:13px;opacity:.8;text-align:center;">
+    Uses <code>/static/models/defender.glb</code> with nodes:
+    <b>Body</b>, <b>Door</b>, <b>RoofRack</b>, <b>Snorkel</b>.
+  </p>
+</div>
+
+<!-- ✅ FIXED CDN IMPORTS -->
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.module.js";
+import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.159.0/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.159.0/examples/jsm/loaders/GLTFLoader.js";
+
+const el = document.getElementById('view');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0a0a);
+
+// --- Camera & Renderer ---
+const cam = new THREE.PerspectiveCamera(45, el.clientWidth / el.clientHeight, 0.1, 100);
+cam.position.set(3, 1.8, 3);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(el.clientWidth, el.clientHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.outputEncoding = THREE.sRGBEncoding;
+el.appendChild(renderer.domElement);
+
+// --- Controls ---
+const ctrl = new OrbitControls(cam, renderer.domElement);
+ctrl.enableDamping = true;
+ctrl.dampingFactor = 0.05;
+ctrl.target.set(0, 0.8, 0);
+
+// --- Lighting ---
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const dir = new THREE.DirectionalLight(0xffffff, 1.5);
+dir.position.set(5, 8, 5);
+dir.castShadow = true;
+scene.add(dir);
+
+// Soft floor
+const floor = new THREE.Mesh(
+  new THREE.CircleGeometry(5, 64),
+  new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 1, metalness: 0 })
+);
+floor.rotation.x = -Math.PI / 2;
+scene.add(floor);
+
+// --- Model ---
+let car, targets = [], parts = {}, spinning = false;
+const paints = { olive: '#556b2f', sand: '#c2b280', black: '#111' };
+const saved = localStorage.getItem('defender_color') || 'olive';
+const status = document.getElementById('status');
+
+// Load GLB
+const loader = new GLTFLoader();
+loader.load(
+  '/static/models/defender.glb',
+  gltf => {
+    car = gltf.scene;
+    scene.add(car);
+
+    // Center & scale
+    const box = new THREE.Box3().setFromObject(car);
+    const size = box.getSize(new THREE.Vector3()).length();
+    const center = box.getCenter(new THREE.Vector3());
+    car.position.sub(center);
+    const scale = 2.5 / size;
+    car.scale.setScalar(scale);
+    ctrl.target.copy(center);
+    ctrl.update();
+
+    // Identify parts
+    parts.RoofRack = car.getObjectByName('RoofRack');
+    parts.Snorkel = car.getObjectByName('Snorkel');
+    car.traverse(n => {
+      if (n.isMesh && /Body|Door/i.test(n.name)) targets.push(n);
+    });
+
+    paint(saved);
+    addHotspot(new THREE.Vector3(0.8, 1.1, 1.2), 'Headlamps', '/?q=headlamp');
+    status.textContent = "👆 Drag to rotate • Pinch to zoom";
+  },
+  xhr => {
+    if (xhr.total) {
+      const pct = ((xhr.loaded / xhr.total) * 100).toFixed(0);
+      status.textContent = `Loading... ${pct}%`;
+    }
+  },
+  err => {
+    status.textContent = "⚠️ Model failed to load (check /static/models/defender.glb)";
+    console.error("GLB load error:", err);
+  }
+);
+
+// --- Paint / Toggle / Spin ---
+window.paint = c => {
+  localStorage.setItem('defender_color', c);
+  targets.forEach(m => m.material.color.set(paints[c] || '#556b2f'));
+};
+window.toggle = part => {
+  if (parts[part]) {
+    parts[part].visible = !parts[part].visible;
+    localStorage.setItem(`defender_${part}`, parts[part].visible);
+  }
+};
+window.autoSpin = () => { spinning = !spinning; };
+
+// --- Hotspot ---
+function addHotspot(v, label, href) {
+  const h = document.createElement('a');
+  h.className = 'hotspot';
+  h.textContent = label;
+  h.href = href;
+  el.appendChild(h);
+  (function anim() {
+    if (car) {
+      const pos = v.clone().applyMatrix4(car.matrixWorld);
+      const p = pos.clone().project(cam);
+      h.style.left = (p.x * 0.5 + 0.5) * el.clientWidth + 'px';
+      h.style.top = (-p.y * 0.5 + 0.5) * el.clientHeight + 'px';
+      h.style.display = p.z < 1 ? 'block' : 'none';
+    }
+    requestAnimationFrame(anim);
+  })();
+}
+
+// --- Resize ---
+window.addEventListener('resize', () => {
+  cam.aspect = el.clientWidth / el.clientHeight;
+  cam.updateProjectionMatrix();
+  renderer.setSize(el.clientWidth, el.clientHeight);
+});
+
+// --- Render Loop ---
+(function loop() {
+  ctrl.update();
+  if (spinning && car) car.rotation.y += 0.005;
+  renderer.render(scene, cam);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

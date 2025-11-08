@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+<title>{{ brand.name }} — Defender Parts</title>
+<style>
+:root {
+  --ink:#0f1412; --muted:#a6b2a1; --bg:#f4f5f3; --card:#fff;
+  --accent:#1C6B3C; --accent-dark:#154f2c;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.45 "Inter",system-ui,-apple-system,Segoe UI,Roboto;}
+img{max-width:100%;display:block;}
+button{cursor:pointer;border:0;border-radius:10px;padding:10px 14px;
+  background:var(--accent);color:#fff;font-weight:600;transition:.2s;}
+button:hover{background:var(--accent-dark);}
+button.ghost{background:#e5e7eb;color:#111;}
+header{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;background:#fff;border-bottom:1px solid #e5e7eb;
+  position:sticky;top:0;z-index:50;flex-wrap:wrap;gap:10px;}
+header .logo-group{display:flex;align-items:center;gap:10px;}
+header img.logo{
+  height:100px;        /* Increased from 42px */
+  width:auto;
+  border-radius:10px;  /* optional soft rounding */
+  object-fit:contain;
+  transition:transform .2s ease;
+}
+header img.logo:hover{transform:scale(1.05);}
+
+header h1{margin:0;font-size:18px;text-transform:uppercase;letter-spacing:.5px;}
+header small{color:var(--muted);font-size:13px;}
+.nav-links{display:flex;gap:12px;flex-wrap:wrap;}
+.nav-links a{font-weight:600;color:var(--accent);}
+.hero{height:260px;background:url('/static/defender_hero.jpg') center/cover no-repeat;
+  display:flex;align-items:center;justify-content:center;color:#fff;text-shadow:0 3px 6px rgba(0,0,0,.4);}
+.hero h2{font-size:clamp(1.4rem,3.5vw,2.2rem);margin:0;text-transform:uppercase;}
+.wrap{max-width:1200px;margin:24px auto;padding:0 18px;}
+.filters{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;}
+.filters input{padding:10px 12px;border:1px solid #dcdcdc;border-radius:10px;background:#fff;flex:1 1 120px;font-size:14px;}
+.filters button{flex:0 0 auto;}
+.filter-label{margin-bottom:10px;font-size:14px;color:var(--accent-dark);font-weight:600;cursor:pointer;}
+.filter-label span{color:#b91c1c;margin-left:6px;font-weight:700;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;}
+.card{background:var(--card);border-radius:16px;overflow:hidden;
+  box-shadow:0 2px 10px rgba(0,0,0,.05);transition:.25s;display:flex;flex-direction:column;}
+.card:hover{transform:translateY(-4px);box-shadow:0 4px 18px rgba(0,0,0,.08);}
+.card img{width:100%;aspect-ratio:4/3;object-fit:cover;}
+.card .p{padding:14px;}
+.name{font-weight:700;font-size:15px;margin-bottom:4px;}
+.category{color:var(--muted);font-size:13px;}
+.price{margin-top:10px;font-weight:700;color:var(--accent-dark);}
+.row{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;}
+.cartbar{
+  position:fixed;bottom:0;left:0;right:0;background:#101410;color:#fff;
+  padding:14px 18px;display:flex;justify-content:space-between;align-items:center;
+  font-size:14px;z-index:45;flex-wrap:wrap;}
+.cart-count{background:#2d7f45;padding:4px 10px;border-radius:50px;
+  font-weight:600;font-size:13px;margin-left:6px;}
+.cartbar div{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.cartbar b{font-size:15px;}
+.cartbar .brand-line{width:100%;text-align:center;font-size:13px;color:#bbb;margin-top:4px;}
+#cartModal{position:fixed;inset:0;background:rgba(0,0,0,0);display:flex;justify-content:flex-end;align-items:stretch;transition:background .3s ease;z-index:90;pointer-events:none;}
+#cartModal.open{background:rgba(0,0,0,.55);pointer-events:auto;}
+.cart-content{background:#fff;color:#000;border-radius:16px 0 0 16px;padding:20px;width:90%;max-width:400px;transform:translateX(100%);transition:transform .35s ease;overflow-y:auto;}
+#cartModal.open .cart-content{transform:translateX(0);}
+.cart-item{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #eee;padding:8px 0;}
+.cart-item img{width:50px;height:50px;object-fit:cover;border-radius:8px;margin-right:10px;}
+.cart-details{flex:1;}
+.cart-name{font-weight:600;font-size:14px;}
+.cart-price{color:var(--accent-dark);font-size:13px;}
+.cart-actions{display:flex;align-items:center;gap:6px;}
+.cart-actions button{padding:4px 8px;border-radius:6px;font-size:13px;background:var(--accent);}
+.cart-actions button:hover{background:var(--accent-dark);}
+.cart-remove{background:#b91c1c!important;}
+.close-btn{background:#000;color:#fff;margin-bottom:10px;width:100%;border-radius:8px;}
+footer{text-align:center;color:var(--muted);padding:40px 10px;font-size:14px;}
+/* CATEGORY MODAL */
+#catModal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100;}
+#catModal .box{background:#fff;color:#000;border-radius:12px;max-width:600px;width:95%;max-height:85vh;overflow-y:auto;padding:20px;}
+#catModal ul{list-style:none;padding:0;margin:0;}
+#catModal li{margin-bottom:6px;}
+#catModal b{display:block;padding:6px 0;cursor:pointer;font-size:15px;}
+#catModal a{display:block;padding:4px 0 4px 14px;color:#1C6B3C;text-decoration:none;}
+#catModal a:hover{text-decoration:underline;}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="logo-group">
+    <img src="/static/logo.jpeg" alt="logo" class="logo" onerror="this.style.display='none'">
+    <div>
+      <h1>{{ brand.name }}</h1>
+      <small>{{ brand.tagline }}</small>
+    </div>
+  </div>
+  <div class="nav-links">
+    <a href="/builder">🚙 3D Builder</a>
+    <a href="/admin">Admin</a>
+  </div>
+</header>
+
+<div class="hero"><h2>Defender Parts & Custom Builds</h2></div>
+
+<div class="wrap">
+  <div class="filters">
+    <input id="search" placeholder="Search parts…" oninput="applyFilters()">
+    <button onclick="openCatModal()">📂 Category</button>
+    <select id="sort" onchange="applyFilters()">
+      <option value="newest">Newest</option>
+      <option value="price_asc">Price: Low → High</option>
+      <option value="price_desc">Price: High → Low</option>
+    </select>
+  </div>
+
+  <div id="filterLabel" class="filter-label" style="display:none;"></div>
+
+  <div id="grid" class="grid"></div>
+</div>
+
+<div class="cartbar" onclick="toggleCart(true)">
+  <div><b>Total:</b> <span id="total">0</span> KES</div>
+  <div><span id="cartCount" class="cart-count">0</span> items • Tap to View</div>
+  <div class="brand-line">{{ brand.name }} — Land Rover Specialists</div>
+</div>
+
+<div id="cartModal">
+  <div class="cart-content">
+    <button class="close-btn" onclick="toggleCart(false)">Close ✕</button>
+    <div id="cartItems"></div>
+    <div style="margin-top:10px;font-weight:600;">Total: <span id="cartTotal">0</span> KES</div>
+    <div style="margin-top:14px;">
+      <label>Phone (2547XXXXXXXX)</label>
+      <input id="phone" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;">
+      <label>Address</label>
+      <textarea id="ship" rows="3" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;"></textarea>
+      <button style="margin-top:10px;width:100%;" id="pay">Pay with M-Pesa</button>
+      <button class="ghost" style="margin-top:8px;width:100%;" onclick="toggleCart(false)">← Continue Shopping</button>
+      <button style="margin-top:8px;width:100%;background:#b91c1c;" onclick="clearCart()">🗑 Clear Cart</button>
+      <div id="paymsg" style="font-size:13px;color:#555;margin-top:6px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CATEGORY MODAL -->
+<div id="catModal">
+  <div class="box">
+    <h3>Choose Category</h3>
+    <ul id="catList"></ul>
+    <button style="width:100%;margin-top:10px;background:#b91c1c;" onclick="closeCatModal()">Close ✕</button>
+  </div>
+</div>
+
+<footer>© {{ brand.name }} | Land Rover Specialists</footer>
+
+<script>
+const fmt=v=>new Intl.NumberFormat('en-KE').format(Math.round(v));
+let catalog=[],cart=JSON.parse(localStorage.getItem('jt_cart')||'[]');
+let activeCategory="";
+function toNum(v){return Number(v)||0;}
+function safeImg(src){return src&&src!=='null'&&src.trim()?src:'placeholder.jpg';}
+
+function save(){localStorage.setItem('jt_cart',JSON.stringify(cart));drawCart();drawModal();}
+function add(p){const ex=cart.find(x=>x.id===p.id);const item={id:p.id,name:p.name,price_kes:toNum(p.price_kes),img:safeImg(p.img),qty:1};ex?ex.qty++:cart.push(item);save();}
+function remove(id){cart=cart.filter(x=>x.id!==id);save();}
+function clearCart(){cart=[];save();alert('Cart cleared');}
+function changeQty(id,d){const r=cart.find(x=>x.id===id);if(!r)return;r.qty+=d;if(r.qty<=0)remove(id);else save();}
+function drawCart(){const tot=cart.reduce((a,b)=>a+b.price_kes*b.qty,0);
+document.getElementById('total').textContent=fmt(tot);
+document.getElementById('cartCount').textContent=cart.reduce((n,i)=>n+i.qty,0);}
+function drawModal(){const list=document.getElementById('cartItems');
+list.innerHTML=cart.length?cart.map(i=>`
+<div class="cart-item">
+<img src="/static/${safeImg(i.img)}">
+<div class="cart-details"><div class="cart-name">${i.name}</div><div class="cart-price">KES ${fmt(i.price_kes)}</div></div>
+<div class="cart-actions"><button onclick="changeQty(${i.id},-1)">−</button><span>${i.qty}</span><button onclick="changeQty(${i.id},1)">+</button><button class="cart-remove" onclick="remove(${i.id})">×</button></div>
+</div>`).join(''):`<p style='text-align:center'>Cart is empty.</p>`;
+document.getElementById('cartTotal').textContent=fmt(cart.reduce((a,b)=>a+b.price_kes*b.qty,0));}
+function toggleCart(show){const m=document.getElementById('cartModal');if(show){m.classList.add('open');drawModal();}else m.classList.remove('open');}
+function card(p){return `<div class="card"><img src="/static/${safeImg(p.img)}"><div class="p"><div class="name">${p.name}</div><div class="category">${p.category||''}</div><div class="row"><div class="price">KES ${fmt(p.price_kes)}</div><button onclick='add(${JSON.stringify(p)})'>Add</button></div></div></div>`;}
+
+async function loadCatalog(){
+  const r=await fetch('/api/products');
+  catalog=await r.json();
+  applyFilters();
+}
+
+function updateFilterLabel(){
+  const lbl=document.getElementById('filterLabel');
+  if(activeCategory){
+    lbl.innerHTML=`Filter: ${activeCategory} <span onclick="clearFilter()">✕</span>`;
+    lbl.style.display='block';
+  } else lbl.style.display='none';
+}
+
+function clearFilter(){
+  activeCategory="";
+  applyFilters();
+}
+
+function applyFilters(){
+  let data=[...catalog];
+  const q=document.getElementById('search').value.trim().toLowerCase();
+  if(q)data=data.filter(p=>p.name.toLowerCase().includes(q)||p.category.toLowerCase().includes(q));
+  if(activeCategory)data=data.filter(p=>p.category.includes(activeCategory));
+  const s=document.getElementById('sort').value;
+  if(s==='price_asc')data.sort((a,b)=>a.price_kes-b.price_kes);
+  if(s==='price_desc')data.sort((a,b)=>b.price_kes-a.price_kes);
+  updateFilterLabel();
+  document.getElementById('grid').innerHTML=data.map(card).join('');
+}
+
+function openCatModal(){
+  const cats={
+    "Engine & Powertrain":["engine block","pistons / rings","camshaft / crankshaft","cylinder head / gasket set","timing belt / timing chain kit","oil pump","fuel injectors","turbocharger","intercooler","radiator","engine mounts"],
+    "Transmission / Gearbox":["manual gearbox","automatic gearbox","transfer case","clutch kit","flywheel","prop shaft","universal joints (UJ)","shift linkage","gearbox mounts"],
+    "Suspension":["control arms","radius arms","track rod","panhard rod","ball joints","tie rod ends","shocks / struts","springs","air suspension bags","sway bar links"],
+    "Braking System":["brake pads","brake discs / rotors","brake calipers","brake booster","ABS module","brake hoses","brake fluid reservoir","handbrake cable"],
+    "Steering System":["power steering pump","steering rack","steering box (older Defenders)","drag link","drop arm","steering column","steering knuckle","power steering hoses"],
+    "Body Exterior":["fenders","bonnet / hood","doors","hinges","bumpers","grille","door seals / weather strips","roof panels","snorkel kit"],
+    "Body Interior":["dashboard","instrument cluster","steering wheel","seats & rails","seat belts","door cards","floor mats","headliner"],
+    "Electrical and Electronics":["alternator","starter motor","ECU / control modules","wiring harness","relays + fuse box","sensors (O2, ABS, MAF, MAP etc.)","ignition coils","spark plugs","battery","switches"],
+    "HVAC (Cooling & AC)":["AC compressor","condenser","evaporator","heater core","blower motor","thermostat","coolant expansion tank","radiator fan"],
+    "Fuel System":["fuel pump","fuel filters","fuel tank","fuel lines","injectors","EGR valve"],
+    "Exhaust":["exhaust manifold","catalytic converter","DPF filter","muffler / silencer","exhaust pipes"],
+    "Offroad / Aftermarket Upgrades":["lift kits","winch","bull bar","light bar + spot lights","diff lockers","rock sliders","roof racks","snorkels"]
+  };
+  const list=document.getElementById('catList');
+  list.innerHTML='';
+  for(const [main,subs] of Object.entries(cats)){
+    const li=document.createElement('li');
+    li.innerHTML=`<b>${main}</b><ul style="display:none"></ul>`;
+    const ul=li.querySelector('ul');
+    subs.forEach(s=>{
+      const sub=document.createElement('li');
+      sub.innerHTML=`<a href="#">${s}</a>`;
+      sub.querySelector('a').onclick=e=>{
+        e.preventDefault();
+        activeCategory=`${main} > ${s}`;
+        closeCatModal();
+        applyFilters();
+      };
+      ul.appendChild(sub);
+    });
+    li.querySelector('b').onclick=()=>ul.style.display=ul.style.display==='none'?'block':'none';
+    list.appendChild(li);
+  }
+  document.getElementById('catModal').style.display='flex';
+}
+function closeCatModal(){document.getElementById('catModal').style.display='none';}
+
+document.getElementById('pay').onclick=async()=>{
+  const phone=document.getElementById('phone').value.trim();
+  if(!phone||!cart.length)return alert('Add items & phone number first.');
+  const r=await fetch('/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone,ship_to:document.getElementById('ship').value,items:cart})});
+  const js=await r.json();
+  document.getElementById('paymsg').textContent=js.ok?'✅ STK Push sent — check your phone':'❌ Error '+JSON.stringify(js.mpesa);
+};
+
+(async()=>{await loadCatalog();drawCart();})();
+</script>
+</body>
+</html>

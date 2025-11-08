@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ product.name }} — {{ brand.name }}</title>
+<style>
+:root{
+ --accent: {{ brand.accent }};
+ --muted:#666; --bg:#f8f8f8; --card:#fff;
+}
+body{margin:0;font-family:system-ui;background:var(--bg);color:#111;}
+a{text-decoration:none;color:var(--accent);}
+header{background:#fff;border-bottom:1px solid #eee;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;}
+.wrap{max-width:1000px;margin:30px auto;padding:0 20px;}
+.product{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:start;}
+.product img{width:100%;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+h1{margin-top:0;}
+.price{font-size:22px;font-weight:700;color:var(--accent);}
+.stock{color:var(--muted);margin:8px 0;}
+button{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer;}
+button:hover{opacity:.9;}
+@media(max-width:800px){.product{grid-template-columns:1fr;}}
+footer{text-align:center;color:#888;font-size:13px;margin:40px 0;}
+</style>
+</head>
+
+<body>
+<header>
+  <h3>{{ brand.name }}</h3>
+  <a href="/">← Back</a>
+</header>
+
+<div class="wrap">
+  <div class="product">
+    <img src="/static/{{ product.img or 'placeholder.jpg' }}" alt="{{ product.name }}">
+    <div>
+      <h1>{{ product.name }}</h1>
+      <div class="price">KES {{ product.price_kes }}</div>
+      <div class="stock">Stock: {{ product.stock }}</div>
+      <p>{{ product.description or "No description available." }}</p>
+      <button onclick="addToCart()">Add to Cart</button>
+    </div>
+  </div>
+</div>
+
+<footer>© {{ brand.name }} | Land Rover Specialists</footer>
+
+<script>
+const product = {{ product|tojson }};
+function addToCart(){
+ let cart = JSON.parse(localStorage.getItem('jt_cart') || '[]');
+ let existing = cart.find(i => i.id === product.id);
+ if(existing){ existing.qty++; } else {
+   cart.push({id: product.id, name: product.name, price: product.price_kes, qty: 1});
+ }
+ localStorage.setItem('jt_cart', JSON.stringify(cart));
+ alert('Added to cart!');
+}
+</script>
+</body>
+</html>
